@@ -84,7 +84,7 @@ export const useAccessStore = createPersistStore(
     },
 
     isValidaBaidu() {
-      return ensure(get(), ["baiduUrl", "baiduApiKey"]);
+      return ensure(get(), ["baiduApiKey", "baiduSecretKey"]);
     },
 
     isAuthorized() {

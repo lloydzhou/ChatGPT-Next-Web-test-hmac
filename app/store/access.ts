@@ -83,7 +83,7 @@ export const useAccessStore = createPersistStore(
       return ensure(get(), ["anthropicApiKey"]);
     },
 
-    isValidaBaidu() {
+    isValidBaidu() {
       return ensure(get(), ["baiduApiKey", "baiduSecretKey"]);
     },
 
@@ -96,7 +96,7 @@ export const useAccessStore = createPersistStore(
         this.isValidAzure() ||
         this.isValidGoogle() ||
         this.isValidAnthropic() ||
-        this.isValidaBaidu() ||
+        this.isValidBaidu() ||
         !this.enabledAccessControl() ||
         (this.enabledAccessControl() && ensure(get(), ["accessCode"]))
       );

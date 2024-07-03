@@ -31,7 +31,7 @@ export function identifyDefaultBaiduModel(modelName: string) {
   const modelMeta = allModals.find((m) => m.name === modelName);
 
   const isBaiduModel =
-    modelName.startsWith("completions_pro") || modelName.startsWith("ernie");
+    modelName.startsWith("completions") || modelName.startsWith("ernie");
 
   return isBaiduModel && modelMeta?.provider?.providerType === "baidu";
 }

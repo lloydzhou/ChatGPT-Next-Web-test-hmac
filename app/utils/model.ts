@@ -23,9 +23,12 @@ export function collectModelTable(
 
   // default models
   models.forEach((m) => {
-    modelTable[m.name] = {
+    // supoort name=displayName eg：completions_pro=ernie-4.0-8k
+    const [name, displayName] = m.name?.split("=");
+    modelTable[name] = {
       ...m,
-      displayName: m.name, // 'provider' is copied over if it exists
+      name,
+      displayName: displayName || name, // 'provider' is copied over if it exists
     };
   });
 

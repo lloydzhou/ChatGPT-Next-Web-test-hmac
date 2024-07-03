@@ -4,6 +4,7 @@ import {
   ApiPath,
   DEFAULT_MODELS,
   ModelProvider,
+  BAIDU_OATUH_URL,
 } from "@/app/constant";
 import { prettyObject } from "@/app/utils/format";
 import { NextRequest, NextResponse } from "next/server";
@@ -11,8 +12,6 @@ import { auth } from "../../auth";
 import { collectModelTable } from "@/app/utils/model";
 
 const serverConfig = getServerSideConfig();
-
-const ALLOWD_PATH = new Set([""]);
 
 async function handle(
   req: NextRequest,
@@ -23,21 +22,6 @@ async function handle(
   if (req.method === "OPTIONS") {
     return NextResponse.json({ body: "OK" }, { status: 200 });
   }
-
-  const subpath = params.path.join("/");
-
-  //   if (!ALLOWD_PATH.has(subpath)) {
-  //     console.log("[Baidu Route] forbidden path ", subpath);
-  //     return NextResponse.json(
-  //       {
-  //         error: true,
-  //         msg: "you are not allowed to request " + subpath,
-  //       },
-  //       {
-  //         status: 403,
-  //       },
-  //     );
-  //   }
 
   const authResult = auth(req, ModelProvider.Ernie);
   if (authResult.error) {
@@ -84,7 +68,7 @@ async function request(req: NextRequest) {
 
   let path = `${req.nextUrl.pathname}`.replaceAll(ApiPath.Baidu, "");
 
-  let baseUrl = serverConfig.baiduUrl || serverConfig.baseUrl || BAIDU_BASE_URL;
+  let baseUrl = serverConfig.baiduUrl || BAIDU_BASE_URL;
 
   if (!baseUrl.startsWith("http")) {
     baseUrl = `https://${baseUrl}`;
@@ -104,7 +88,7 @@ async function request(req: NextRequest) {
     10 * 60 * 1000,
   );
 
-  const access_token = await getAccessToken();
+  const { access_token } = await getAccessToken();
   const fetchUrl = `${baseUrl}${path}?access_token=${access_token}`;
 
   const fetchOptions: RequestInit = {
@@ -170,20 +154,21 @@ async function request(req: NextRequest) {
 
 /**
  * 使用 AK，SK 生成鉴权签名（Access Token）
- * @return string 鉴权签名信息（Access Token）
+ * @return 鉴权签名信息
  */
-async function getAccessToken() {
+async function getAccessToken(): Promise<{
+  access_token: string;
+  expires_in: number;
+  error?: number;
+}> {
   const AK = serverConfig.baiduApiKey;
   const SK = serverConfig.baiduSecretKey;
   const res = await fetch(
-    "https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=" +
-      AK +
-      "&client_secret=" +
-      SK,
+    `${BAIDU_OATUH_URL}?grant_type=client_credentials&client_id=${AK}&client_secret=${SK}`,
     {
       method: "POST",
     },
   );
   const resJson = await res.json();
-  return resJson.access_token;
+  return resJson;
 }

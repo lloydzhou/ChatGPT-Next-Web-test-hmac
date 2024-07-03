@@ -16,6 +16,8 @@ export const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/";
 
 export const BAIDU_BASE_URL = "https://aip.baidubce.com";
 
+export const BAIDU_OATUH_URL = "https://aip.baidubce.com/oauth/2.0/token";
+
 export enum Path {
   Home = "/",
   Chat = "/chat",
@@ -181,7 +183,15 @@ const anthropicModels = [
   "claude-3-5-sonnet-20240620",
 ];
 
-const baiduModels = ["completions_pro"];
+const baiduModels = [
+  "ernie-4.0-turbo-8k",
+  "completions_pro=ernie-4.0-8k",
+  "ernie-4.0-8k-preview",
+  "completions_adv_pro=ernie-4.0-8k-preview-0518",
+  "ernie-4.0-8k-latest",
+  "completions=ernie-3.5-8k",
+  "ernie-3.5-8k-0205",
+];
 
 export const DEFAULT_MODELS = [
   ...openaiModels.map((name) => ({

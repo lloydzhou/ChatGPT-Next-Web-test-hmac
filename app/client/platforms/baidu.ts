@@ -3,10 +3,7 @@ import {
   ApiPath,
   Baidu,
   DEFAULT_API_HOST,
-  DEFAULT_MODELS,
-  OpenaiPath,
   REQUEST_TIMEOUT_MS,
-  ServiceProvider,
 } from "@/app/constant";
 import { useAccessStore, useAppConfig, useChatStore } from "@/app/store";
 
@@ -25,12 +22,7 @@ import {
 } from "@fortaine/fetch-event-source";
 import { prettyObject } from "@/app/utils/format";
 import { getClientConfig } from "@/app/config/client";
-import { makeAzurePath } from "@/app/azure";
-import {
-  getMessageTextContent,
-  getMessageImages,
-  isVisionModel,
-} from "@/app/utils";
+import { getMessageTextContent, isVisionModel } from "@/app/utils";
 
 export interface OpenAIListModelResponse {
   object: string;
@@ -67,9 +59,7 @@ export class ErnieApi implements LLMApi {
 
     if (baseUrl.length === 0) {
       const isApp = !!getClientConfig()?.isApp;
-      baseUrl = isApp
-        ? DEFAULT_API_HOST + "/proxy" + ApiPath.Baidu
-        : ApiPath.Baidu;
+      baseUrl = isApp ? DEFAULT_API_HOST + "/api/proxy/baidu" : ApiPath.Baidu;
     }
 
     if (baseUrl.endsWith("/")) {

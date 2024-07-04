@@ -27,12 +27,8 @@ import { SideBar } from "./sidebar";
 import { useAppConfig } from "../store/config";
 import { AuthPage } from "./auth";
 import { getClientConfig } from "../config/client";
-import { ClientApi } from "../client/api";
+import { ClientApi, getApiClient } from "../client/api";
 import { useAccessStore } from "../store";
-import {
-  identifyDefaultClaudeModel,
-  identifyDefaultBaiduModel,
-} from "../utils/checkers";
 
 export function Loading(props: { noLogo?: boolean }) {
   return (
@@ -174,16 +170,8 @@ function Screen() {
 export function useLoadData() {
   const config = useAppConfig();
 
-  var api: ClientApi;
-  if (config.modelConfig.model.startsWith("gemini")) {
-    api = new ClientApi(ModelProvider.GeminiPro);
-  } else if (identifyDefaultClaudeModel(config.modelConfig.model)) {
-    api = new ClientApi(ModelProvider.Claude);
-  } else if (identifyDefaultBaiduModel(config.modelConfig.model)) {
-    api = new ClientApi(ModelProvider.Ernie);
-  } else {
-    api = new ClientApi(ModelProvider.GPT);
-  }
+  const api: ClientApi = getApiClient(config.modelConfig.providerName);
+
   useEffect(() => {
     (async () => {
       const models = await api.llm.models();

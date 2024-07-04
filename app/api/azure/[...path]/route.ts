@@ -1,37 +1,119 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSideConfig } from "../config/server";
 import { type OpenAIListModelResponse } from "@/app/client/platforms/openai";
-import { OPENAI_BASE_URL, ServiceProvider } from "../constant";
-import { isModelAvailableInServer } from "../utils/model";
+import { getServerSideConfig } from "@/app/config/server";
+import {
+  ModelProvider,
+  OpenaiPath,
+  ServiceProvider,
+  Azure,
+} from "@/app/constant";
+import { prettyObject } from "@/app/utils/format";
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/app/api/auth";
+import { makeAzurePath } from "@/app/azure";
+import { isModelAvailableInServer } from "@/app/utils/model";
+import { getModels } from "@/app/api/common";
+
+const ALLOWD_PATH = new Set([Azure.ChatPath]);
 
 const serverConfig = getServerSideConfig();
 
-export function getModels(remoteModelRes: OpenAIListModelResponse) {
-  const config = getServerSideConfig();
+async function handle(
+  req: NextRequest,
+  { params }: { params: { path: string[] } },
+) {
+  console.log("[Azure Route] params ", params);
 
-  if (config.disableGPT4) {
-    remoteModelRes.data = remoteModelRes.data.filter(
-      (m) => !m.id.startsWith("gpt-4"),
+  if (req.method === "OPTIONS") {
+    return NextResponse.json({ body: "OK" }, { status: 200 });
+  }
+
+  const subpath = params.path.join("/");
+
+  if (!ALLOWD_PATH.has(subpath)) {
+    console.log("[Azure Route] forbidden path ", subpath);
+    return NextResponse.json(
+      {
+        error: true,
+        msg: "you are not allowed to request " + subpath,
+      },
+      {
+        status: 403,
+      },
     );
   }
 
-  return remoteModelRes;
+  const authResult = auth(req, ModelProvider.Azure);
+  if (authResult.error) {
+    return NextResponse.json(authResult, {
+      status: 401,
+    });
+  }
+
+  try {
+    const response = await request(req);
+    // // list models
+    if (subpath === OpenaiPath.ListModelPath && response.status === 200) {
+      const resJson = (await response.json()) as OpenAIListModelResponse;
+      const availableModels = getModels(resJson);
+      return NextResponse.json(availableModels, {
+        status: response.status,
+      });
+    }
+    return response;
+  } catch (e) {
+    console.error("[Azure] ", e);
+    return NextResponse.json(prettyObject(e));
+  }
 }
 
-export async function requestOpenai(req: NextRequest) {
+export const GET = handle;
+export const POST = handle;
+
+export const runtime = "edge";
+export const preferredRegion = [
+  "arn1",
+  "bom1",
+  "cdg1",
+  "cle1",
+  "cpt1",
+  "dub1",
+  "fra1",
+  "gru1",
+  "hnd1",
+  "iad1",
+  "icn1",
+  "kix1",
+  "lhr1",
+  "pdx1",
+  "sfo1",
+  "sin1",
+  "syd1",
+];
+
+export async function request(req: NextRequest) {
   const controller = new AbortController();
 
-  const authValue = req.headers.get("Authorization") ?? "";
-  const authHeaderName = "Authorization";
+  const authValue =
+    req.headers.get("Authorization")?.trim().replaceAll("Bearer ", "").trim() ??
+    "";
+
+  const authHeaderName = "api-key";
 
   let path = `${req.nextUrl.pathname}${req.nextUrl.search}`.replaceAll(
-    "/api/openai/",
+    "/api/azure/",
     "",
   );
 
-  let baseUrl = serverConfig.baseUrl || OPENAI_BASE_URL;
+  if (!serverConfig.azureUrl) {
+    return NextResponse.json({
+      error: true,
+      message: `missing AZURE_URL in server env vars`,
+    });
+  }
 
-  if (!baseUrl.startsWith("http")) {
+  let baseUrl = serverConfig.azureUrl;
+
+  if (!baseUrl?.startsWith("http")) {
     baseUrl = `https://${baseUrl}`;
   }
 
@@ -49,6 +131,14 @@ export async function requestOpenai(req: NextRequest) {
     10 * 60 * 1000,
   );
 
+  if (!serverConfig.azureApiVersion) {
+    return NextResponse.json({
+      error: true,
+      message: `missing AZURE_API_VERSION in server env vars`,
+    });
+  }
+  path = makeAzurePath(path, serverConfig.azureApiVersion);
+
   const fetchUrl = `${baseUrl}/${path}`;
   const fetchOptions: RequestInit = {
     headers: {
@@ -56,7 +146,7 @@ export async function requestOpenai(req: NextRequest) {
       "Cache-Control": "no-store",
       [authHeaderName]: authValue,
       ...(serverConfig.openaiOrgId && {
-        "OpenAI-Organization": serverConfig.openaiOrgId,
+        "Azure-Organization": serverConfig.openaiOrgId,
       }),
     },
     method: req.method,
@@ -81,7 +171,7 @@ export async function requestOpenai(req: NextRequest) {
         isModelAvailableInServer(
           serverConfig.customModels,
           jsonBody?.model as string,
-          ServiceProvider.OpenAI as string,
+          ServiceProvider.Azure as string,
         )
       ) {
         return NextResponse.json(
@@ -95,7 +185,7 @@ export async function requestOpenai(req: NextRequest) {
         );
       }
     } catch (e) {
-      console.error("[OpenAI] gpt4 filter", e);
+      console.error("[Azure] gpt4 filter", e);
     }
   }
 

@@ -5,6 +5,7 @@ import {
   DEFAULT_MODELS,
   DEFAULT_SIDEBAR_WIDTH,
   StoreKey,
+  ModelProvider,
 } from "../constant";
 import { createPersistStore } from "../utils/store";
 
@@ -58,6 +59,7 @@ export const DEFAULT_CONFIG = {
     compressMessageLengthThreshold: 1000,
     enableInjectSystemPrompts: true,
     template: config?.template ?? DEFAULT_INPUT_TEMPLATE,
+    providerName: ModelProvider.Default,
   },
 };
 
@@ -116,12 +118,12 @@ export const useAppConfig = createPersistStore(
 
       for (const model of oldModels) {
         model.available = false;
-        modelMap[model.name] = model;
+        modelMap[`${model.name}@${model?.provider?.id}`] = model;
       }
 
       for (const model of newModels) {
         model.available = true;
-        modelMap[model.name] = model;
+        modelMap[`${model.name}@${model?.provider?.id}`] = model;
       }
 
       set(() => ({

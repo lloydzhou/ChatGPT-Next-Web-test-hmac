@@ -447,13 +447,16 @@ export function Selector<T>(props: {
   onSelection?: (selection: T[]) => void;
   onClose?: () => void;
   multiple?: boolean;
+  setSelected?: (value: T) => boolean;
 }) {
   return (
     <div className={styles["selector"]} onClick={() => props.onClose?.()}>
       <div className={styles["selector-content"]}>
         <List>
           {props.items.map((item, i) => {
-            const selected = props.defaultSelectedValue === item.value;
+            const selected = props?.setSelected
+              ? props?.setSelected?.(item.value)
+              : props.defaultSelectedValue === item.value;
             return (
               <ListItem
                 className={styles["selector-item"]}

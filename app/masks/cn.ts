@@ -119,7 +119,7 @@ export const CN_MASKS: BuiltinMask[] = [
       },
     ],
     modelConfig: {
-      model: "claude-3-5-sonnet-20240620",
+      model: "claude-3-5-sonnet-20240620@Anthropic",
       temperature: 1,
       max_tokens: 4000,
       presence_penalty: 0,
